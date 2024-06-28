@@ -27,6 +27,8 @@
 #include <string>
 #include <variant>
 
+#include "box.hpp"
+
 namespace roofer {
 
   typedef std::array<float, 2> arr2f;
@@ -110,33 +112,6 @@ namespace roofer {
 
     const_iterator begin() const;
     const_iterator end() const;
-  };
-
-  class Box {
-   private:
-    std::array<float, 3> pmin, pmax;
-    bool just_cleared;
-
-   public:
-    Box();
-
-    std::array<float, 3> min() const;
-    std::array<float, 3> max() const;
-    float size_x() const;
-    float size_y() const;
-    void set(std::array<float, 3> nmin, std::array<float, 3> nmax);
-    void add(float p[]);
-    void add(double p[]);
-    void add(arr3f a);
-    void add(arr3d a);
-    void add(const Box& otherBox);
-    void add(Box& otherBox);
-    void add(const vec3f& vec);
-    void add(vec3f& vec);
-    bool intersects(Box& otherBox) const;
-    void clear();
-    bool isEmpty() const;
-    arr3f center() const;
   };
 
   class Geometry {
@@ -307,6 +282,9 @@ namespace roofer {
 
   std::vector<std::string> split_string(const std::string& s,
                                         std::string delimiter);
+
+  std::vector<std::string> find_filepaths(
+      const std::string& path, std::initializer_list<std::string> extensions);
 
   bool has_duplicates_ring(const vec3f& poly, const float& dupe_threshold);
   bool is_degenerate(const LinearRing& poly, const float& dupe_threshold);

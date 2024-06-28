@@ -2,12 +2,16 @@
  * Logger library for roofer.
  *
  * Implements a generic logger facade that can use different logging backends.
- * The logging backend is selected compile time with the USE_LOGGER_* option.
+ * The logging backend is selected compile time with the RF_USE_LOGGER_* option.
  * Currently available backends:
  *  - internal (default)
- *  - spdlog (enable with USE_LOGGER_SPDLOG)
+ *  - spdlog (enable with RF_USE_LOGGER_SPDLOG)
  *
  * Each implementation is thread-safe.
+ * The spdlog backend writes the messages to a JSON file in addition to logging
+ * to the console. If you enable tracing, it is recommended to use the spdlog
+ * backend, because the JSON log allows efficient log processing.
+ *
  *
  * References:
  * - https://hnrck.io/post/singleton-design-pattern/
@@ -27,6 +31,7 @@ namespace roofer::logger {
 
   enum class LogLevel : std::uint8_t {
     off = 0,
+    trace,
     debug,
     info,
     default_level = info,
@@ -57,6 +62,21 @@ namespace roofer::logger {
     /** @brief Returns a reference to the single logger instance. */
     static Logger &get_logger();
 
+    /**
+     * @brief Trace is used for logging counts on a process, eg. the number of
+     * reconstructed buildings.
+     *
+     * The trace message is a string that contains a valid JSON object with the
+     * "name" and "count" members.
+     *
+     * @param name Name of the process, eg. "reconstruct".
+     * @param count Current count, eg. the number of reconstructed buildings.
+     */
+    void trace(std::string_view name, size_t count) {
+      log(LogLevel::trace,
+          fmt::format(R"({{\"name\":\"{}\",\"count\":{}}})", name, count));
+    }
+
     template <typename... Args>
     void debug(fmt::format_string<Args...> fmt, Args &&...args) {
       log(LogLevel::debug, fmt::vformat(fmt, fmt::make_format_args(args...)));
@@ -84,7 +104,7 @@ namespace roofer::logger {
     }
 
    private:
-    inline static const std::string logfile_path_{"roofer.log"};
+    inline static const std::string logfile_path_{"roofer.log.json"};
 
     Logger() = default;
 

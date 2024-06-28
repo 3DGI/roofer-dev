@@ -420,8 +420,8 @@ int main(int argc, const char* argv[]) {
                                  PlaneDetector->roof_type == "no planes";
   if (pointcloud_insufficient) {
     attr_skip.push_back(true);
-    CityJsonWriter->write(path_output_jsonl, footprints, nullptr, nullptr,
-                          nullptr, attributes);
+    CityJsonWriter->write(path_output_jsonl, footprints[fp_i], nullptr, nullptr,
+                          nullptr, attributes, fp_i);
   }
 
   auto PlaneDetector_ground = roofer::reconstruction::createPlaneDetector();
@@ -454,10 +454,8 @@ int main(int argc, const char* argv[]) {
         roofer::reconstruction::createSimplePolygonExtruder();
     SimplePolygonExtruder->compute(footprints[fp_i], floor_elevation,
                                    PlaneDetector->roof_elevation_70p);
-    std::vector<std::unordered_map<int, roofer::Mesh> > multisolidvec;
-    multisolidvec.push_back(SimplePolygonExtruder->multisolid);
-    CityJsonWriter->write(path_output_jsonl, footprints, &multisolidvec,
-                          &multisolidvec, &multisolidvec, attributes);
+    CityJsonWriter->write(path_output_jsonl, footprints[fp_i], &SimplePolygonExtruder->multisolid,
+                          &SimplePolygonExtruder->multisolid, &SimplePolygonExtruder->multisolid, attributes, fp_i);
     logger.info("Completed CityJsonWriter to {}", path_output_jsonl);
   } else {
     auto AlphaShaper = roofer::reconstruction::createAlphaShaper();
@@ -580,13 +578,8 @@ int main(int argc, const char* argv[]) {
                                      attr_rmse_lod22, SegmentRasteriser.get(),
                                      PlaneDetector.get(), LOD22);
 
-    std::vector<std::unordered_map<int, roofer::Mesh> > multisolidvec12,
-        multisolidvec13, multisolidvec22;
-    multisolidvec12.push_back(multisolids_lod12);
-    multisolidvec13.push_back(multisolids_lod13);
-    multisolidvec22.push_back(multisolids_lod22);
-    CityJsonWriter->write(path_output_jsonl, footprints, &multisolidvec12,
-                          &multisolidvec13, &multisolidvec22, attributes);
+    CityJsonWriter->write(path_output_jsonl, footprints[0], &multisolids_lod12,
+                          &multisolids_lod13, &multisolids_lod22, attributes, fp_i);
     logger.info("Completed CityJsonWriter to {}", path_output_jsonl);
   }
   // end LoD2

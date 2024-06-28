@@ -3,7 +3,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external")
 add_subdirectory(roofer-app)
 add_subdirectory(crop)
 add_subdirectory(reconstruct)
-add_subdirectory(reconstruct_api)
 
 if(WIN32)
     install (DIRECTORY ${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/proj

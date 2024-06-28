@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
-      fail-fast: false
+      fail-fast: true
 
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       # See: https://github.com/actions/runner-images?tab=readme-ov-file#available-images
@@ -26,6 +26,7 @@ jobs:
         # Default compilers:
         #   - Ubuntu 22.04 (jammy): gcc-11, clang-14
         #   - Ubuntu 24.04 (noble): gcc-13, clang-18
+        #   - macOS 14: clang-15
         include:
           - os: ubuntu-22.04
             c_compiler: gcc
@@ -108,21 +109,21 @@ jobs:
           cmake -B build
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-          --preset gh-${{ runner.os }}
+          --preset gh-${{ runner.os }}-full
           -S ${{ github.workspace }}
 
       - name: Build
         # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-        run: cmake --build build --config ${{ matrix.build_type }} --verbose --preset gh-${{ runner.os }}
+        run: cmake --build build --config ${{ matrix.build_type }} --verbose --preset gh-${{ runner.os }}-full
 
       - name: Test
         # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ctest --preset test-built --build-config ${{ matrix.build_type }} --test-dir build
+        run: ctest --preset test-built --build-config ${{ matrix.build_type }} --test-dir build --output-on-failure
 
       - name: Install
         run: cmake --install build --config ${{ matrix.build_type }} --verbose
 
       - name: Test installed
         shell: bash
-        run: ctest --preset test-installed --build-config ${{ matrix.build_type }} --test-dir build
+        run: ctest --preset test-installed --build-config ${{ matrix.build_type }} --test-dir build --output-on-failure

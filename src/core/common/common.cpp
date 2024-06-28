@@ -16,88 +16,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <initializer_list>
 #include <roofer/common/common.hpp>
 
 namespace roofer {
 
-  Box::Box() { clear(); }
-
-  std::array<float, 3> Box::min() const { return pmin; }
-  std::array<float, 3> Box::max() const { return pmax; }
-  void Box::set(std::array<float, 3> nmin, std::array<float, 3> nmax) {
-    pmin = nmin;
-    pmax = nmax;
-    just_cleared = false;
-  }
-  void Box::add(float p[]) {
-    if (just_cleared) {
-      pmin[0] = p[0];
-      pmin[1] = p[1];
-      pmin[2] = p[2];
-      pmax[0] = p[0];
-      pmax[1] = p[1];
-      pmax[2] = p[2];
-      just_cleared = false;
-    }
-    pmin[0] = std::min(p[0], pmin[0]);
-    pmin[1] = std::min(p[1], pmin[1]);
-    pmin[2] = std::min(p[2], pmin[2]);
-    pmax[0] = std::max(p[0], pmax[0]);
-    pmax[1] = std::max(p[1], pmax[1]);
-    pmax[2] = std::max(p[2], pmax[2]);
-  }
-  void Box::add(double p[]) {
-    if (just_cleared) {
-      pmin[0] = float(p[0]);
-      pmin[1] = float(p[1]);
-      pmin[2] = float(p[2]);
-      pmax[0] = float(p[0]);
-      pmax[1] = float(p[1]);
-      pmax[2] = float(p[2]);
-      just_cleared = false;
-    }
-    pmin[0] = std::min(float(p[0]), pmin[0]);
-    pmin[1] = std::min(float(p[1]), pmin[1]);
-    pmin[2] = std::min(float(p[2]), pmin[2]);
-    pmax[0] = std::max(float(p[0]), pmax[0]);
-    pmax[1] = std::max(float(p[1]), pmax[1]);
-    pmax[2] = std::max(float(p[2]), pmax[2]);
-  }
-  void Box::add(arr3f a) { add(a.data()); }
-  void Box::add(std::array<double, 3> a) { add(a.data()); }
-  void Box::add(const Box& otherBox) {
-    add(otherBox.min());
-    add(otherBox.max());
-  }
-  void Box::add(Box& otherBox) {
-    add(otherBox.min());
-    add(otherBox.max());
-  }
-  void Box::add(vec3f& vec) {
-    for (auto& p : vec) add(p);
-  }
-  void Box::add(const vec3f& vec) {
-    for (auto& p : vec) add(p);
-  }
-  float Box::size_x() const { return pmax[0] - pmin[0]; }
-  float Box::size_y() const { return pmax[1] - pmin[1]; }
-  bool Box::intersects(Box& otherBox) const {
-    bool intersect_x =
-        (pmin[0] < otherBox.pmax[0]) && (pmax[0] > otherBox.pmin[0]);
-    bool intersect_y =
-        (pmin[1] < otherBox.pmax[1]) && (pmax[1] > otherBox.pmin[1]);
-    return intersect_x && intersect_y;
-  }
-  void Box::clear() {
-    pmin.fill(0);
-    pmax.fill(0);
-    just_cleared = true;
-  }
-  bool Box::isEmpty() const { return just_cleared; }
-  arr3f Box::center() const {
-    return {(pmax[0] + pmin[0]) / 2, (pmax[1] + pmin[1]) / 2,
-            (pmax[2] + pmin[2]) / 2};
-  }
+  namespace fs = std::filesystem;
 
   const Box& Geometry::box() {
     if (!bbox.has_value()) {
@@ -429,6 +354,28 @@ namespace roofer {
     }
     parts.push_back(s.substr(last));
     return parts;
+  }
+
+  std::vector<std::string> find_filepaths(
+      const std::string& filepaths,
+      std::initializer_list<std::string> extensions) {
+    std::vector<std::string> files;
+    std::vector<std::string> filepath_parts = split_string(filepaths, " ");
+    for (const auto& filepath_part : filepath_parts) {
+      if (fs::is_directory(filepath_part)) {
+        for (auto& p : fs::directory_iterator(filepath_part)) {
+          auto ext = p.path().extension();
+          for (auto& filter_ext : extensions) {
+            if (filter_ext == ext) {
+              files.push_back(p.path().string());
+            }
+          }
+        }
+      } else {
+        if (fs::exists(filepath_part)) files.push_back(filepath_part);
+      }
+    }
+    return files;
   }
 
   bool has_duplicates_ring(const vec3f& poly, const float& dupe_threshold) {

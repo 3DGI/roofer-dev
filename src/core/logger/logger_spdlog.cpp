@@ -1,30 +1,33 @@
 /**
  * spdlog logging backend implementation.
  * Logs messages to stdout, stderr, file.
+ * The log file is a JSON file.
  */
 #ifdef RF_USE_LOGGER_SPDLOG
 
+#include <roofer/logger/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 #include <cassert>
-#include <roofer/logger/logger.h">
 
 namespace roofer::logger {
   spdlog::level::level_enum cast_level(LogLevel level) {
     switch (level) {
-      case LogLevel::OFF:
+      case LogLevel::off:
         return spdlog::level::off;
-      case LogLevel::DEBUG:
+      case LogLevel::trace:
+        return spdlog::level::trace;
+      case LogLevel::debug:
         return spdlog::level::debug;
-      case LogLevel::INFO:
+      case LogLevel::info:
         return spdlog::level::info;
-      case LogLevel::WARNING:
+      case LogLevel::warning:
         return spdlog::level::warn;
-      case LogLevel::ERROR:
+      case LogLevel::error:
         return spdlog::level::err;
-      case LogLevel::CRITICAL:
+      case LogLevel::critical:
         return spdlog::level::critical;
     }
     return spdlog::level::off;
@@ -49,23 +52,39 @@ namespace roofer::logger {
         spdlog::logger("stderr", {stderr_sink, file_sink});
 
     logger_impl() {
-      stdout_sink->set_level(cast_level(level));
-      stderr_sink->set_level(cast_level(level));
-      file_sink->set_level(cast_level(level));
+      auto spdlog_level = cast_level(level);
+      stdout_sink->set_level(spdlog_level);
+      stderr_sink->set_level(spdlog_level);
+      file_sink->set_level(spdlog_level);
+      // Set up json logging in the logfile.
+      file_sink->set_pattern("{\n \"log\": [");
+      logger_stdout.log(spdlog_level, "");
+      std::string jsonpattern = {
+          R"({"time": "%Y-%m-%dT%H:%M:%S.%f%z", "name": "%n", "level": "%^%l%$", "process": %P, "thread": %t, "message": "%v"},)"};
+      file_sink->set_pattern(jsonpattern);
     }
 
     ~logger_impl() {
-      spdlog::drop("stdout");
-      spdlog::drop("stderr");
+      // Finalize the json logfile.
+      std::string jsonlastlogpattern = {
+          R"({"time": "%Y-%m-%dT%H:%M:%S.%f%z", "name": "%n", "level": "%^%l%$", "process": %P, "thread": %t, "message": "%v"})"};
+      file_sink->set_pattern(jsonlastlogpattern);
+      logger_stdout.log(cast_level(level), "Finished.");
+      file_sink->set_pattern("]\n}");
+      logger_stdout.log(cast_level(level), "");
+      spdlog::drop_all();
     }
 
     void set_level(LogLevel new_level) {
       // We set the "level" member too, for the sake of completeness, althought
       // we only need to set the levels on the sinks for spdlog.
       level = new_level;
-      stdout_sink->set_level(cast_level(new_level));
-      stderr_sink->set_level(cast_level(new_level));
-      file_sink->set_level(cast_level(new_level));
+      auto spdlog_level = cast_level(new_level);
+      stdout_sink->set_level(spdlog_level);
+      stderr_sink->set_level(spdlog_level);
+      file_sink->set_level(spdlog_level);
+      logger_stdout.set_level(spdlog_level);
+      logger_stderr.set_level(spdlog_level);
     }
   };
 
@@ -86,21 +105,24 @@ namespace roofer::logger {
   void Logger::log(LogLevel level, std::string_view message) {
     assert(impl_);
     switch (level) {
-      case LogLevel::OFF:
+      case LogLevel::off:
         return;
-      case LogLevel::DEBUG:
+      case LogLevel::trace:
+        impl_->logger_stdout.trace(message);
+        return;
+      case LogLevel::debug:
         impl_->logger_stdout.debug(message);
         return;
-      case LogLevel::INFO:
+      case LogLevel::info:
         impl_->logger_stdout.info(message);
         return;
-      case LogLevel::WARNING:
+      case LogLevel::warning:
         impl_->logger_stdout.warn(message);
         return;
-      case LogLevel::ERROR:
+      case LogLevel::error:
         impl_->logger_stderr.error(message);
         return;
-      case LogLevel::CRITICAL:
+      case LogLevel::critical:
         impl_->logger_stderr.critical(message);
         return;
     }

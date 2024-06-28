@@ -37,11 +37,12 @@ namespace roofer::io {
     // typeid(Date), typeid(Time), typeid(DateTime)});
 
     virtual void write(
-        const std::string& source, const std::vector<LinearRing>& footprints,
-        const std::vector<std::unordered_map<int, Mesh> >* geometry_lod12,
-        const std::vector<std::unordered_map<int, Mesh> >* geometry_lod13,
-        const std::vector<std::unordered_map<int, Mesh> >* geometry_lod22,
-        const AttributeVecMap& attributes) = 0;
+        const std::string& source, const LinearRing& footprints,
+        const std::unordered_map<int, Mesh>* geometry_lod12,
+        const std::unordered_map<int, Mesh>* geometry_lod13,
+        const std::unordered_map<int, Mesh>* geometry_lod22,
+        const AttributeVecMap& attributes,
+        const size_t attribute_index) = 0;
   };
 
   std::unique_ptr<CityJsonWriterInterface> createCityJsonWriter(

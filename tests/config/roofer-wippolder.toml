@@ -6,7 +6,6 @@ id_attribute = "identificatie"
 name = "pointcloud"
 quality = 1
 path = "data/wippolder/wippolder.las"
-force_low_lod = true
 
 [parameters]
 cellsize = 0.5

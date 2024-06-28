@@ -2,8 +2,16 @@
 #include <memory>
 #include <roofer/common/common.hpp>
 #include <roofer/common/datastructures.hpp>
+#include <vector>
 
 namespace roofer::misc {
+  struct RTreeInterface {
+    virtual ~RTreeInterface(){};
+
+    virtual void insert(const roofer::TBox<double>& box, void* item) = 0;
+    virtual std::vector<void*> query(const roofer::TBox<double>& query) = 0;
+  };
+
   struct Vector2DOpsInterface {
     virtual ~Vector2DOpsInterface() = default;
 
@@ -17,4 +25,5 @@ namespace roofer::misc {
   };
 
   std::unique_ptr<Vector2DOpsInterface> createVector2DOpsGEOS();
+  std::unique_ptr<RTreeInterface> createRTreeGEOS();
 }  // namespace roofer::misc

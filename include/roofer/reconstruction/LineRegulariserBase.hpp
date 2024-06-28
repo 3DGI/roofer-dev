@@ -24,16 +24,16 @@
 #include <roofer/common/datastructures.hpp>
 
 namespace roofer::linereg {
-  typedef CGAL::Exact_predicates_exact_constructions_kernel K;
+  using K = CGAL::Exact_predicates_exact_constructions_kernel;
   // typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
-  typedef K::Point_2 Point_2;
-  typedef K::Point_3 Point_3;
-  typedef K::Vector_2 Vector_2;
-  typedef K::Line_2 Line_2;
-  typedef K::Segment_2 Segment_2;
-  typedef CGAL::Polygon_2<K> Polygon_2;
-  typedef CGAL::Polygon_with_holes_2<K> Polygon_with_holes_2;
+  using Point_2 = K::Point_2;
+  using Point_3 = K::Point_3;
+  using Vector_2 = K::Vector_2;
+  using Line_2 = K::Line_2;
+  using Segment_2 = K::Segment_2;
+  using Polygon_2 = CGAL::Polygon_2<K>;
+  using Polygon_with_holes_2 = CGAL::Polygon_with_holes_2<K>;
 
   struct linetype;
 
@@ -46,17 +46,17 @@ namespace roofer::linereg {
     virtual void calc_mean_value() = 0;
   };
   struct AngleCluster : public Cluster<double> {
-    double distance(Cluster<double>* other_cluster);
-    void calc_mean_value();
+    double distance(Cluster<double>* other_cluster) override;
+    void calc_mean_value() override;
   };
   struct DistCluster : public Cluster<Segment_2> {
-    double distance(Cluster<Segment_2>* other_cluster);
-    void calc_mean_value();
+    double distance(Cluster<Segment_2>* other_cluster) override;
+    void calc_mean_value() override;
   };
 
   template <typename ClusterH>
   struct DistanceTable {
-    typedef std::pair<ClusterH, ClusterH> ClusterPair;
+    using ClusterPair = std::pair<ClusterH, ClusterH>;
 
     // fibonacci heap from boost
     struct ClusterPairDist {
@@ -68,8 +68,8 @@ namespace roofer::linereg {
         return dist > rhs.dist;
       }
     };
-    typedef boost::heap::fibonacci_heap<ClusterPairDist> DistanceHeap;
-    typedef typename DistanceHeap::handle_type heap_handle;
+    using DistanceHeap = boost::heap::fibonacci_heap<ClusterPairDist>;
+    using heap_handle = typename DistanceHeap::handle_type;
 
     // define hash function such that the same hash results regardless of the
     // order of cluster handles in the pair struct KeyHash {
@@ -92,9 +92,7 @@ namespace roofer::linereg {
     //       ((lhs.first==rhs.second) && (lhs.second==rhs.first));
     //   }
     // };
-    typedef std::unordered_map<ClusterH,
-                               std::list<std::shared_ptr<heap_handle>>>
-        Cluster2DistPairMap;
+    using Cluster2DistPairMap = std::unordered_map<ClusterH, std::list<std::shared_ptr<heap_handle>>>;
 
     Cluster2DistPairMap cluster_to_dist_pairs;
     DistanceHeap distances;
@@ -112,8 +110,8 @@ namespace roofer::linereg {
   // extern template class Cluster<double>;
   // extern template class Cluster<Segment_2>;
 
-  typedef std::shared_ptr<AngleCluster> AngleClusterH;
-  typedef std::shared_ptr<DistCluster> DistClusterH;
+  using AngleClusterH = std::shared_ptr<AngleCluster>;
+  using DistClusterH = std::shared_ptr<DistCluster>;
 
   extern template class DistanceTable<AngleClusterH>;
   extern template class DistanceTable<DistClusterH>;
@@ -152,7 +150,7 @@ namespace roofer::linereg {
 
   static constexpr double pi = 3.14159265358979323846;
   class LineRegulariser {
-    typedef std::vector<Segment_2> SegmentVec;
+    using SegmentVec = std::vector<Segment_2>;
 
     // roofer::SegmentCollection& input_segments;
    public:
@@ -164,7 +162,7 @@ namespace roofer::linereg {
     std::set<AngleClusterH> angle_clusters;
     std::set<DistClusterH> dist_clusters;
 
-    LineRegulariser(){};
+    LineRegulariser()= default;
 
     void add_segments(size_t priority, const Polygon_2& polygon,
                       double offset) {

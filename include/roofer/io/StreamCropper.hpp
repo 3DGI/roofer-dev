@@ -26,10 +26,17 @@ namespace roofer::io {
     virtual ~PointCloudCropperInterface() = default;
 
     virtual void process(
-        std::string source, std::vector<LinearRing>& polygons,
+        const std::vector<std::string>& lasfiles,
+        std::vector<LinearRing>& polygons,
         std::vector<LinearRing>& buf_polygons,
         std::vector<PointCollection>& point_clouds, vec1f& ground_elevations,
-        vec1i& acquisition_years,
+        vec1i& acquisition_years, const Box& polygon_extent,
+        PointCloudCropperConfig cfg = PointCloudCropperConfig{}) = 0;
+    virtual void process(
+        std::string filepaths, std::vector<LinearRing>& polygons,
+        std::vector<LinearRing>& buf_polygons,
+        std::vector<PointCollection>& point_clouds, vec1f& ground_elevations,
+        vec1i& acquisition_years, const Box& polygon_extent,
         PointCloudCropperConfig cfg = PointCloudCropperConfig{}) = 0;
   };
 

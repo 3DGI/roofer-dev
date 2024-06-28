@@ -28,7 +28,7 @@ inline constexpr auto reconstruct_parallel =
   auto [outputs] = co_await lf::co_new<Points>(cropped_buildings.size());
 
   for (std::size_t i = 0; i < cropped_buildings.size(); ++i) {
-    co_await lf::fork[&outputs[i], reconstruct_one_building_libfork](
+    co_await lf::fork(&outputs[i], reconstruct_one_building_libfork)(
         cropped_buildings[i]);
   }
 

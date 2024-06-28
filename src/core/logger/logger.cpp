@@ -7,7 +7,7 @@
  * https://github.com/PacktPublishing/Multi-Paradigm-Programming-with-Modern-Cpp-daytime
  * .
  */
-#if !defined(USE_LOGGER_SPDLOG)
+#if !defined(RF_USE_LOGGER_SPDLOG)
 
 #include <fmt/chrono.h>
 #include <roofer/logger/logger.h>
@@ -26,7 +26,7 @@
 namespace roofer::logger {
   /** @brief Convert the log level into string */
   std::string string_from_log_level(roofer::logger::LogLevel level) {
-    std::array<std::string, 6> names = {"OFF",     "DEBUG", "INFO",
+    std::array<std::string, 7> names = {"OFF",     "TRACE", "DEBUG",   "INFO",
                                         "WARNING", "ERROR", "CRITICAL"};
     auto ilevel = static_cast<int>(level);
     return names[ilevel];

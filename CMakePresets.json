@@ -2,6 +2,20 @@
   "version": 6,
   "configurePresets": [
     {
+      "name": "vcpkg-full-test",
+      "description": "Build with vcpkg with all dependencies, to test a full build.",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_SHARED_LIBS": "ON",
+        "RF_USE_VAL3DITY": "ON",
+        "RF_USE_RERUN": "ON",
+        "RF_USE_LOGGER_SPDLOG": "ON",
+        "RF_BUILD_TESTING": "ON",
+        "RF_BUILD_APPS": "ON"
+      }
+    },
+    {
       "name": "vcpkg-minimal",
       "description": "Build with vcpkg without any optional dependencies, in order to get the quickest build possible.",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
@@ -64,6 +78,24 @@
       "cacheVariables": {
         "X_VCPKG_APPLOCAL_DEPS_INSTALL": "ON"
       }
+    },
+    {
+      "name": "gh-Linux-full",
+      "description": "Preset for github actions CI Linux configure with all options",
+      "inherits": "vcpkg-full-test"
+    },
+    {
+      "name": "gh-macOS-full",
+      "description": "Preset for github actions CI macOS configure with all options",
+      "inherits": "vcpkg-full-test"
+    },
+    {
+      "name": "gh-Windows-full",
+      "description": "Preset for github actions CI Windows configure with all options",
+      "inherits": "vcpkg-full-test",
+      "cacheVariables": {
+        "X_VCPKG_APPLOCAL_DEPS_INSTALL": "ON"
+      }
     }
   ],
   "buildPresets" : [
@@ -85,7 +117,25 @@
       "configurePreset": "gh-Windows",
       "jobs": 4,
       "configuration": "Release"
-
+    },
+        {
+      "name": "gh-Linux-full",
+      "description": "Preset for github actions CI Linux build with all options",
+      "configurePreset": "gh-Linux-full",
+      "jobs": 4
+    },
+    {
+      "name": "gh-macOS-full",
+      "description": "Preset for github actions CI macOS build with all options",
+      "configurePreset": "gh-macOS-full",
+      "jobs": 3
+    },
+    {
+      "name": "gh-Windows-full",
+      "description": "Preset for github actions CI Windows build with all options",
+      "configurePreset": "gh-Windows-full",
+      "jobs": 4,
+      "configuration": "Release"
     }
   ],
   "testPresets": [

@@ -53,3 +53,19 @@ You can list all available presets:
 cd roofer-dev
 cmake --list-presets
 ```
+
+## Logging
+
+There are two logging backends available, the internal and `spdlog`.
+Roofer defaults to the internal logger, which logs to the console.
+With `spdlog`, roofer logs to the console and to a JSON log file.
+To use `spdlog`, set the `RF_USE_LOGGER_SPDLOG` CMake variable `ON`.
+
+The logging verbosity is controlled with the `-v, --verbose` and `-t, --trace` options.
+
+### Tracing
+The `roofer` app can trace object counts and the amount of heap allocation during its process.
+To enable tracing, pass the `--trace` option to `roofer`.
+It is strongly recommended to use `spdlog` if you enable tracing, so that the logs are stored as JSON in the `roofer.log.json` logfile.
+The `tools/plot_traces.py` python script can help you to plot the tracing information.
+The script requires the `matplotlib` and `pandas` libraries to run, it takes the log file as its single argument and writes the plot to `roofer_trace_plot.png`.

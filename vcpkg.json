@@ -1,6 +1,20 @@
 {
   "name": "roofer",
   "version-string": "1.0.0",
+  "features": {
+    "spdlog": {
+      "description": "Use spdlog as logging backend.",
+      "dependencies": [
+        "spdlog"
+      ]
+    },
+    "test": {
+      "description": "Build tests.",
+      "dependencies": [
+        "catch2"
+      ]
+    }
+  },
   "dependencies": [
     {
       "name": "nlohmann-json",
@@ -20,6 +34,10 @@
         "recommended-features",
         "postgresql"
       ]
+    },
+    {
+      "name": "libfork",
+      "version>=": "3.8.0"
     }
   ],
   "overrides": [

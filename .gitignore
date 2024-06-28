@@ -1,5 +1,6 @@
 # Build dirs
 cmake-build-*
+vcpkg_installed
 
 # CMake
 CMakeUserPresets.json

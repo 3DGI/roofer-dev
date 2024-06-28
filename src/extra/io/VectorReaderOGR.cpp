@@ -149,7 +149,7 @@ namespace roofer::io {
       poLayer->GetExtent(&extent);
       logger.info("Layer extent: {} {} {} {}", extent.MinX, extent.MinY,
                   extent.MaxX, extent.MaxY);
-      layer_extent = {extent.MinX, extent.MinY, extent.MaxX, extent.MaxY};
+      layer_extent = {extent.MinX, extent.MinY, 0, extent.MaxX, extent.MaxY, 0};
     }
 
     void read_polygon(OGRPolygon* poPolygon,
@@ -246,7 +246,8 @@ namespace roofer::io {
       if (this->region_of_interest.has_value()) {
         logger.info("Setting spatial filter");
         auto& roi = *this->region_of_interest;
-        poLayer->SetSpatialFilterRect(roi[0], roi[1], roi[2], roi[3]);
+        poLayer->SetSpatialFilterRect(roi.pmin[0], roi.pmin[1], roi.pmax[0],
+                                      roi.pmax[1]);
       }
 
       // if ((poLayer->GetFeatureCount()) < feature_select || feature_select <

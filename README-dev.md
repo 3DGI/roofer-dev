@@ -49,7 +49,7 @@ See the CMake presets for the available test configurations.
 Various test cases are available at https://data.3dgi.xyz/roofer-test-data.
 Each test case is documented in the README.
 
-The test data is downloaded automatically into `tests/data` during the project configuration, provided that you enable the tests with `BUILD_TESTING`.
+The test data is downloaded automatically into `tests/data` during the project configuration, provided that you enable the tests with `RF_BUILD_TESTING`.
 Once available locally, the data is not re-downloaded, unless the files are removed or they change on the server.
 
 #### Adding test data

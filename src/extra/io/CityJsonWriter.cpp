@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -14,7 +15,7 @@ namespace roofer::io {
     void add_vertices_ring(std::map<arr3d, size_t>& vertex_map,
                            std::vector<arr3d>& vertex_vec,
                            std::set<arr3d>& vertex_set, const T& ring,
-                           Box& bbox) {
+                           TBox<double>& bbox) {
       size_t v_cntr = vertex_vec.size();
       for (auto& vertex_ : ring) {
         auto vertex = pjHelper.coord_transform_rev(vertex_);
@@ -27,11 +28,11 @@ namespace roofer::io {
       }
     }
 
-    Box add_vertices_polygon(std::map<arr3d, size_t>& vertex_map,
-                             std::vector<arr3d>& vertex_vec,
-                             std::set<arr3d>& vertex_set,
-                             const LinearRing& polygon) {
-      Box bbox;
+    TBox<double> add_vertices_polygon(std::map<arr3d, size_t>& vertex_map,
+                                      std::vector<arr3d>& vertex_vec,
+                                      std::set<arr3d>& vertex_set,
+                                      const LinearRing& polygon) {
+      TBox<double> bbox;
       add_vertices_ring(vertex_map, vertex_vec, vertex_set, polygon, bbox);
       for (auto& iring : polygon.interior_rings()) {
         add_vertices_ring(vertex_map, vertex_vec, vertex_set, iring, bbox);
@@ -39,10 +40,11 @@ namespace roofer::io {
       return bbox;
     }
 
-    Box add_vertices_mesh(std::map<arr3d, size_t>& vertex_map,
-                          std::vector<arr3d>& vertex_vec,
-                          std::set<arr3d>& vertex_set, const Mesh& mesh) {
-      Box bbox;
+    TBox<double> add_vertices_mesh(std::map<arr3d, size_t>& vertex_map,
+                                   std::vector<arr3d>& vertex_vec,
+                                   std::set<arr3d>& vertex_set,
+                                   const Mesh& mesh) {
+      TBox<double> bbox;
       for (auto& face : mesh.get_polygons()) {
         bbox.add(
             add_vertices_polygon(vertex_map, vertex_vec, vertex_set, face));
@@ -112,18 +114,19 @@ namespace roofer::io {
 
     // Computes the geographicalExtent array from a geoflow::Box and the
     // data_offset from the NodeManager
-    nlohmann::json::array_t compute_geographical_extent(Box& bbox) {
+    nlohmann::json::array_t compute_geographical_extent(TBox<double>& bbox) {
       auto minp = bbox.min();
       auto maxp = bbox.max();
       return {minp[0], minp[1], minp[2], maxp[0], maxp[1], maxp[2]};
     }
 
-    void write_cityobjects(
-        const std::vector<LinearRing>& footprints,
-        const std::vector<std::unordered_map<int, Mesh>>* multisolids_lod12,
-        const std::vector<std::unordered_map<int, Mesh>>* multisolids_lod13,
-        const std::vector<std::unordered_map<int, Mesh>>* multisolids_lod22,
-        const AttributeVecMap& attributes, nlohmann::json& outputJSON,
+    using MeshMap = std::unordered_map<int, Mesh>;
+    void write_cityobject(
+        const LinearRing& footprint,
+        const MeshMap* multisolid_lod12,
+        const MeshMap* multisolid_lod13,
+        const MeshMap* multisolid_lod22,
+        const AttributeVecMap& attributes, size_t i, nlohmann::json& outputJSON,
         std::vector<arr3d>& vertex_vec, std::string& identifier_attribute,
         StrMap& output_attribute_names, bool& only_output_renamed) {
       std::map<arr3d, size_t> vertex_map;
@@ -132,20 +135,13 @@ namespace roofer::io {
       size_t bp_counter = 0;
 
       // we expect at least one of the geomtry inputs is set
-      bool export_lod12 = multisolids_lod12;
-      bool export_lod13 = multisolids_lod13;
-      bool export_lod22 = multisolids_lod22;
-      size_t geometry_count = 0;
-      if (export_lod12)
-        geometry_count = multisolids_lod12->size();
-      else if (export_lod13)
-        geometry_count = multisolids_lod13->size();
-      else if (export_lod22)
-        geometry_count = multisolids_lod22->size();
+      bool export_lod12 = multisolid_lod12;
+      bool export_lod13 = multisolid_lod13;
+      bool export_lod22 = multisolid_lod22;
 
-      typedef std::unordered_map<int, Mesh> MeshMap;
+      
       nlohmann::json j_null;
-      for (size_t i = 0; i < geometry_count; ++i) {
+      {
         auto building = nlohmann::json::object();
         auto b_id = std::to_string(++id_cntr);
         building["type"] = "Building";
@@ -236,7 +232,6 @@ namespace roofer::io {
         fp_geometry["lod"] = "0";
         fp_geometry["type"] = "MultiSurface";
 
-        const LinearRing footprint = footprints[i];
         add_vertices_polygon(vertex_map, vertex_vec, vertex_set, footprint);
         fp_geometry["boundaries"] = {
             LinearRing2jboundary(vertex_map, footprint)};
@@ -245,21 +240,21 @@ namespace roofer::io {
         std::vector<std::string> buildingPartIds;
 
         bool has_solids = false;
-        if (export_lod12) has_solids = multisolids_lod12->at(i).size();
-        if (export_lod13) has_solids = multisolids_lod13->at(i).size();
-        if (export_lod22) has_solids = multisolids_lod22->at(i).size();
+        if (export_lod12) has_solids = multisolid_lod12->size();
+        if (export_lod13) has_solids = multisolid_lod13->size();
+        if (export_lod22) has_solids = multisolid_lod22->size();
 
-        Box building_bbox;
+        TBox<double> building_bbox;
         if (has_solids) {
-          MeshMap meshmap;
+          const MeshMap* meshmap;
           if (export_lod22) {
-            meshmap = multisolids_lod22->at(i);
+            meshmap = multisolid_lod22;
           } else if (export_lod13) {
-            meshmap = multisolids_lod13->at(i);
+            meshmap = multisolid_lod13;
           } else if (export_lod12) {
-            meshmap = multisolids_lod12->at(i);
+            meshmap = multisolid_lod12;
           }
-          for (const auto& [sid, solid_lodx] : meshmap) {
+          for (const auto& [sid, solid_lodx] : *meshmap) {
             auto buildingPart = nlohmann::json::object();
             auto bp_id = b_id + "-" + std::to_string(sid);
 
@@ -274,9 +269,9 @@ namespace roofer::io {
               try {
                 building_bbox =
                     add_vertices_mesh(vertex_map, vertex_vec, vertex_set,
-                                      multisolids_lod12->at(i).at(sid));
+                                      multisolid_lod12->at(sid));
                 buildingPart["geometry"].push_back(mesh2jSolid(
-                    multisolids_lod12->at(i).at(sid), "1.2", vertex_map));
+                    multisolid_lod12->at(sid), "1.2", vertex_map));
               } catch (const std::exception& e) {
                 // std::cout << "skipping lod 12 building part\n";
               }
@@ -285,9 +280,9 @@ namespace roofer::io {
               try {
                 building_bbox =
                     add_vertices_mesh(vertex_map, vertex_vec, vertex_set,
-                                      multisolids_lod13->at(i).at(sid));
+                                      multisolid_lod13->at(sid));
                 buildingPart["geometry"].push_back(mesh2jSolid(
-                    multisolids_lod13->at(i).at(sid), "1.3", vertex_map));
+                    multisolid_lod13->at(sid), "1.3", vertex_map));
               } catch (const std::exception& e) {
                 // std::cout << "skipping lod 13 building part\n";
               }
@@ -295,9 +290,9 @@ namespace roofer::io {
             if (export_lod22) {
               building_bbox =
                   add_vertices_mesh(vertex_map, vertex_vec, vertex_set,
-                                    multisolids_lod22->at(i).at(sid));
+                                    multisolid_lod22->at(sid));
               buildingPart["geometry"].push_back(mesh2jSolid(
-                  multisolids_lod22->at(i).at(sid), "2.2", vertex_map));
+                  multisolid_lod22->at(sid), "2.2", vertex_map));
             }
 
             // attributes
@@ -339,11 +334,11 @@ namespace roofer::io {
    public:
     using CityJsonWriterInterface::CityJsonWriterInterface;
     void write(
-        const std::string& source, const std::vector<LinearRing>& footprints,
-        const std::vector<std::unordered_map<int, Mesh>>* multisolids_lod12,
-        const std::vector<std::unordered_map<int, Mesh>>* multisolids_lod13,
-        const std::vector<std::unordered_map<int, Mesh>>* multisolids_lod22,
-        const AttributeVecMap& attributes) override {
+        const std::string& source, const LinearRing& footprint,
+        const MeshMap* multisolid_lod12,
+        const MeshMap* multisolid_lod13,
+        const MeshMap* multisolid_lod22,
+        const AttributeVecMap& attributes, size_t attribute_index) override {
       pjHelper.set_rev_crs_transform(CRS_.c_str());
 
       nlohmann::json outputJSON;
@@ -352,8 +347,8 @@ namespace roofer::io {
       outputJSON["CityObjects"] = nlohmann::json::object();
 
       std::vector<arr3d> vertex_vec;
-      write_cityobjects(footprints, multisolids_lod12, multisolids_lod13,
-                        multisolids_lod22, attributes, outputJSON, vertex_vec,
+      write_cityobject(footprint, multisolid_lod12, multisolid_lod13,
+                        multisolid_lod22, attributes, attribute_index, outputJSON, vertex_vec,
                         identifier_attribute, output_attribute_names,
                         only_output_renamed_);
 
